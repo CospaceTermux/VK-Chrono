@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Дневной отчет беседы — {{ date_str }}{% endblock %}
+
+{% block content %}
+<header class="header">
+    <div class="header-info">
+        <h1>💬 Дневной лог сообщений</h1>
+        <div class="header-meta">
+            <span class="badge badge-primary">📅 {{ date_str }}</span>
+            <span class="badge">👥 Беседа ID: {{ peer_id }}</span>
+            <span class="badge">✉️ Сообщений: {{ messages|length }}</span>
+            <span class="badge">👤 Участников: {{ stats.active_users }}</span>
+        </div>
+    </div>
+    <div class="header-actions">
+        <button class="theme-btn" onclick="toggleTheme()">🌓 Сменить тему</button>
+    </div>
+</header>
+
+{% if summary_html %}
+<section class="summary-card">
+    <h2>✨ Умная сводка дня (AI Digest)</h2>
+    <div class="summary-content">
+        {{ summary_html | safe }}
+    </div>
+</section>
+{% endif %}
+
+<section class="toolbar">
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="🔍 Поиск по тексту сообщений...">
+    </div>
+    <select id="authorFilter" class="filter-select">
+        <option value="all">Все участники ({{ stats.active_users }})</option>
+        {% for author in authors %}
+        <option value="{{ author.user_id }}">{{ author.name }} ({{ author.count }})</option>
+        {% endfor %}
+    </select>
+</section>
+
+<section class="chat-timeline" id="chatTimeline">
+    {% for msg in messages %}
+    <article class="message-row" data-author="{{ msg.from_id }}" data-text="{{ msg.text | lower }}">
+        <div class="avatar" title="{{ msg.full_name }}">
+            {% if msg.avatar_src %}
+                <img src="{{ msg.avatar_src }}" alt="{{ msg.full_name }}" loading="lazy">
+            {% else %}
+                <span>{{ msg.full_name[:1] }}</span>
+            {% endif %}
+        </div>
+        <div class="message-body">
+            <div class="message-header">
+                <a href="https://vk.com/{{ msg.domain if msg.domain else 'id' ~ msg.from_id }}" 
+                   target="_blank" rel="noopener noreferrer" class="author-name">
+                    {{ msg.full_name }}
+                </a>
+                <span class="message-time">{{ msg.time_str }}</span>
+            </div>
+            
+            <div class="message-bubble">
+                {% if msg.reply %}
+                <div class="reply-snippet">
+                    <strong>↩️ {{ msg.reply.author_name }}:</strong> {{ msg.reply.text }}
+                </div>
+                {% endif %}
+
+                {% if msg.text %}
+                <div class="message-text">{{ msg.text_html | safe }}</div>
+                {% endif %}
+
+                {% if msg.attachments %}
+                <div class="attachments-grid">
+                    {% for att in msg.attachments %}
+                        {% if att.type == 'photo' %}
+                            <a href="{{ att.url }}" target="_blank" rel="noopener noreferrer">
+                                <img src="{{ att.preview_url or att.url }}" class="attachment-photo" alt="Фотография" loading="lazy">
+                            </a>
+                        {% elif att.type == 'doc' %}
+                            <a href="{{ att.url }}" target="_blank" rel="noopener noreferrer" class="attachment-item">
+                                📄 {{ att.title or 'Документ' }} {% if att.size_str %}({{ att.size_str }}){% endif %}
+                            </a>
+                        {% elif att.type == 'audio_message' %}
+                            <div class="attachment-item">
+                                🎙️ Голосовое сообщение {% if att.duration %}({{ att.duration }} сек.){% endif %}
+                            </div>
+                        {% elif att.type == 'sticker' %}
+                            <img src="{{ att.url }}" style="max-width: 120px; max-height: 120px;" alt="Стикер">
+                        {% else %}
+                            <span class="attachment-item">📎 [{{ att.type }}]</span>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </article>
+    {% else %}
+    <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+        Нет сообщений за этот день.
+    </div>
+    {% endfor %}
+</section>
+{% endblock %}

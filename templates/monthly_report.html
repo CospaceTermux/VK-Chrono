@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Месячный архив беседы — {{ month_key }}{% endblock %}
+
+{% block content %}
+<header class="header">
+    <div class="header-info">
+        <h1>📚 Месячный архив и летопись беседы</h1>
+        <div class="header-meta">
+            <span class="badge badge-primary">📅 Месяц: {{ month_key }}</span>
+            <span class="badge">👥 Беседа: {{ peer_id }}</span>
+            <span class="badge">📑 Недель: {{ weeks|length }}</span>
+            <span class="badge">✉️ Сообщений за месяц: {{ total_messages }}</span>
+        </div>
+    </div>
+    <div class="header-actions">
+        <button class="theme-btn" onclick="toggleTheme()">🌓 Сменить тему</button>
+    </div>
+</header>
+
+<section class="summary-card">
+    <h2>🌟 Главные итоги и вехи месяца</h2>
+    <div class="summary-content">
+        {{ monthly_summary_html | safe }}
+    </div>
+</section>
+
+<section style="margin-bottom: 24px;">
+    <h2 style="font-size: 1.3rem; margin-bottom: 16px; color: var(--text-main);">🗓️ Дайджесты по неделям</h2>
+    
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+        {% for week in weeks %}
+        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                <h3 style="font-size: 1.1rem; color: var(--text-main);">
+                    📁 Неделя <strong>{{ week.week_key }}</strong> ({{ week.start_date }} — {{ week.end_date }})
+                </h3>
+                <div style="display: flex; gap: 8px;">
+                    <span class="badge">{{ week.days_count }} дн. / {{ week.message_count }} сообщ.</span>
+                    {% if week.html_rel_path %}
+                    <a href="{{ week.html_rel_path }}" class="badge badge-primary" style="text-decoration: none;">
+                        🔍 Открыть дайджест недели
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="summary-content" style="font-size: 0.925rem;">
+                {{ week.summary_html | safe }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

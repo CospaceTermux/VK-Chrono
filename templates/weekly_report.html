@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Недельный дайджест — {{ week_key }}{% endblock %}
+
+{% block content %}
+<header class="header">
+    <div class="header-info">
+        <h1>📊 Недельный дайджест беседы</h1>
+        <div class="header-meta">
+            <span class="badge badge-primary">🗓️ Неделя: {{ week_key }}</span>
+            <span class="badge">📅 Период: {{ start_date }} — {{ end_date }}</span>
+            <span class="badge">👥 Беседа: {{ peer_id }}</span>
+            <span class="badge">📑 Дней в отчете: {{ days|length }}</span>
+            <span class="badge">✉️ Всего сообщений: {{ total_messages }}</span>
+        </div>
+    </div>
+    <div class="header-actions">
+        <button class="theme-btn" onclick="toggleTheme()">🌓 Сменить тему</button>
+    </div>
+</header>
+
+<section class="summary-card">
+    <h2>🏆 Главные итоги недели (AI Digest)</h2>
+    <div class="summary-content">
+        {{ weekly_summary_html | safe }}
+    </div>
+</section>
+
+<section style="margin-bottom: 24px;">
+    <h2 style="font-size: 1.3rem; margin-bottom: 16px; color: var(--text-main);">📅 Хроника недели по дням</h2>
+    
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+        {% for day in days %}
+        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                <h3 style="font-size: 1.1rem; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+                    📌 <strong>{{ day.date_str }}</strong>
+                </h3>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <span class="badge">{{ day.message_count }} сообщ.</span>
+                    {% if day.html_rel_path %}
+                    <a href="{{ day.html_rel_path }}" class="badge badge-primary" style="text-decoration: none;">
+                        🔍 Открыть полный лог дня
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="summary-content" style="font-size: 0.925rem;">
+                {{ day.summary_html | safe }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

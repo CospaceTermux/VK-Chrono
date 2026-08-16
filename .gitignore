@@ -1,0 +1,33 @@
+# Virtual Environment
+.venv/
+venv/
+ENV/
+
+# Environment Variables & Secrets (НЕ коммитить токены!)
+.env
+.env.txt
+*.env
+*.env.txt
+
+# SQLite Data, Cache & Local Reports
+data/chat_logger.db*
+data/avatars/*
+data/reports/*
+!data/avatars/.gitkeep
+!data/reports/daily/.gitkeep
+!data/reports/weekly/.gitkeep
+!data/reports/monthly/.gitkeep
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# IDE & OS files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
