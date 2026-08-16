@@ -89,6 +89,16 @@ class GeminiSummarizer:
                         att_info.append(f'[Голосовое сообщение ({dur} сек.)]')
                 elif t == "sticker":
                     att_info.append("[Стикер]")
+                elif t == "wall":
+                    w_author = a.get("author_name", "сообщества")
+                    w_text = a.get("text", "")[:100].strip()
+                    att_info.append(f'[Репост записи от {w_author}: "{w_text}"]' if w_text else f'[Репост записи от {w_author}]')
+                elif t == "link":
+                    att_info.append(f"[Ссылка: {a.get('title', '')} ({a.get('url', '')})]")
+                elif t == "video":
+                    att_info.append(f"[Видео: {a.get('title', '')}]")
+                elif t == "article":
+                    att_info.append(f"[Статья: {a.get('title', '')}]")
                 else:
                     att_info.append(f"[{t}]")
             

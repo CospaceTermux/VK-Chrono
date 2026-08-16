@@ -274,6 +274,47 @@ class VKBotClient:
                     "type": "sticker",
                     "url": st_url
                 })
+            elif att_type == "wall":
+                # Репост записи со стены сообщества или пользователя
+                wall_obj = a.get("wall", {})
+                from_id_wall = wall_obj.get("from_id") or wall_obj.get("owner_id", 0)
+                post_id = wall_obj.get("id", 0)
+                post_text = wall_obj.get("text", "")
+                
+                wall_author_user = self.ensure_user(from_id_wall) if from_id_wall != 0 else {}
+                author_title = f"{wall_author_user.get('first_name', '')} {wall_author_user.get('last_name', '')}".strip() or f"id{from_id_wall}"
+
+                parsed.append({
+                    "type": "wall",
+                    "url": f"https://vk.com/wall{from_id_wall}_{post_id}",
+                    "text": post_text[:300],
+                    "author_name": author_title
+                })
+            elif att_type == "link":
+                link_obj = a.get("link", {})
+                parsed.append({
+                    "type": "link",
+                    "title": link_obj.get("title", "Ссылка"),
+                    "url": link_obj.get("url", ""),
+                    "description": link_obj.get("description", "")
+                })
+            elif att_type == "video":
+                video_obj = a.get("video", {})
+                v_owner = video_obj.get("owner_id", 0)
+                v_id = video_obj.get("id", 0)
+                parsed.append({
+                    "type": "video",
+                    "title": video_obj.get("title", "Видео"),
+                    "duration": video_obj.get("duration", 0),
+                    "url": f"https://vk.com/video{v_owner}_{v_id}"
+                })
+            elif att_type == "article":
+                art_obj = a.get("article", {})
+                parsed.append({
+                    "type": "article",
+                    "title": art_obj.get("title", "Статья"),
+                    "url": art_obj.get("url", "")
+                })
             else:
                 parsed.append({"type": att_type or "unknown"})
         return parsed

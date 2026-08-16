@@ -98,11 +98,45 @@
                                 </div>
                                 {% endif %}
                             </div>
+                        {% elif att.type == 'wall' %}
+                            <div style="background: var(--msg-bg-other); border-left: 3px solid var(--accent); border-radius: 4px; padding: 10px 14px; margin-top: 6px; width: 100%; max-width: 480px;">
+                                <div style="font-size: 0.85rem; font-weight: 600; color: var(--accent); margin-bottom: 4px;">
+                                    📌 Репост записи: {{ att.author_name }}
+                                </div>
+                                {% if att.text %}
+                                <div style="font-size: 0.9rem; color: var(--text-main); margin-bottom: 6px;">{{ att.text }}</div>
+                                {% endif %}
+                                <a href="{{ att.url }}" target="_blank" rel="noopener noreferrer" style="font-size: 0.8rem; color: var(--accent); text-decoration: none;">
+                                    🔗 Открыть запись ВКонтакте &rarr;
+                                </a>
+                            </div>
+                        {% elif att.type == 'link' %}
+                            <a href="{{ att.url }}" target="_blank" rel="noopener noreferrer" class="attachment-item">
+                                🔗 {{ att.title or att.url }}
+                            </a>
+                        {% elif att.type == 'video' %}
+                            <a href="{{ att.url }}" target="_blank" rel="noopener noreferrer" class="attachment-item">
+                                🎬 {{ att.title or 'Видео' }}
+                            </a>
+                        {% elif att.type == 'article' %}
+                            <a href="{{ att.url }}" target="_blank" rel="noopener noreferrer" class="attachment-item">
+                                📰 {{ att.title or 'Статья' }}
+                            </a>
                         {% elif att.type == 'sticker' %}
                             <img src="{{ att.url }}" style="max-width: 120px; max-height: 120px;" alt="Стикер">
                         {% else %}
                             <span class="attachment-item">📎 [{{ att.type }}]</span>
                         {% endif %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if msg.fwd %}
+                <div style="margin-top: 8px; border-left: 2px solid var(--border); padding-left: 10px;">
+                    {% for f in msg.fwd %}
+                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px;">
+                        <strong>↳ {{ f.from_name }}:</strong> {{ f.text }}
+                    </div>
                     {% endfor %}
                 </div>
                 {% endif %}
