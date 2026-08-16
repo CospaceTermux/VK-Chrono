@@ -12,8 +12,10 @@ ENV/
 # SQLite Data, Cache & Local Reports
 data/chat_logger.db*
 data/avatars/*
+data/photos/*
 data/reports/*
 !data/avatars/.gitkeep
+!data/photos/.gitkeep
 !data/reports/daily/.gitkeep
 !data/reports/weekly/.gitkeep
 !data/reports/monthly/.gitkeep

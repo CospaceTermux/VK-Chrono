@@ -3,6 +3,7 @@ import time
 import random
 import logging
 import requests
+from datetime import datetime
 from pathlib import Path
 from typing import Optional, Dict, Any, List
 import vk_api
@@ -169,20 +170,52 @@ class VKBotClient:
             logger.warning(f"Ошибка скачивания аватара {url}: {e}")
         return ""
 
-    def parse_attachments(self, attachments: list) -> List[Dict[str, Any]]:
-        """Парсит вложения VK сообщения."""
+    def _download_photo(self, photo_id: int, url: str, date_str: str) -> str:
+        """Скачивает фотографию из беседы в локальную папку data/photos/{date_str}/{photo_id}.jpg."""
+        if not url or not config.DOWNLOAD_PHOTOS:
+            return ""
+        
+        target_dir = config.PHOTOS_DIR / date_str
+        target_dir.mkdir(parents=True, exist_ok=True)
+        dest = target_dir / f"{photo_id}.jpg"
+
+        if dest.exists():
+            return str(dest)
+
+        try:
+            resp = requests.get(url, timeout=15)
+            if resp.status_code == 200:
+                with open(dest, "wb") as f:
+                    f.write(resp.content)
+                logger.info(f"📷 [Медиа] Фотография сохранена локально: {dest}")
+                return str(dest)
+        except Exception as e:
+            logger.warning(f"Ошибка скачивания фотографии {url}: {e}")
+        return ""
+
+    def parse_attachments(self, attachments: list, date_str: str = "") -> List[Dict[str, Any]]:
+        """Парсит и скачивает вложения VK сообщения."""
         parsed = []
         for a in (attachments or []):
             att_type = a.get("type")
             if att_type == "photo":
                 photo_obj = a.get("photo", {})
+                photo_id = photo_obj.get("id", int(time.time()))
                 sizes = photo_obj.get("sizes", [])
                 best_photo = sizes[-1]["url"] if sizes else ""
                 preview = sizes[0]["url"] if sizes else best_photo
+                
+                # Скачиваем фото локально
+                local_photo_path = ""
+                if best_photo and date_str:
+                    local_photo_path = self._download_photo(photo_id, best_photo, date_str)
+
                 parsed.append({
                     "type": "photo",
+                    "id": photo_id,
                     "url": best_photo,
-                    "preview_url": preview
+                    "preview_url": preview,
+                    "local_path": local_photo_path
                 })
             elif att_type == "doc":
                 doc_obj = a.get("doc", {})
@@ -218,6 +251,7 @@ class VKBotClient:
         from_id = message_obj.get("from_id", 0)
         text = message_obj.get("text", "")
         timestamp = message_obj.get("date", int(time.time()))
+        date_str = datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d") if timestamp else datetime.now().strftime("%Y-%m-%d")
 
         # Фильтр по беседе если настроен TARGET_PEER_ID > 0
         if self.target_peer_id > 0 and peer_id != self.target_peer_id:
@@ -226,8 +260,8 @@ class VKBotClient:
         # Гарантируем наличие пользователя в базе и скачивание аватара
         self.ensure_user(from_id)
 
-        # Обработка вложений
-        attachments = self.parse_attachments(message_obj.get("attachments", []))
+        # Обработка вложений со скачиванием фото
+        attachments = self.parse_attachments(message_obj.get("attachments", []), date_str=date_str)
 
         # Обработка ответа на сообщение (reply_message)
         reply = None

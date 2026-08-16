@@ -33,12 +33,16 @@ class Config:
     NOTIFY_CHAT_ON_DAILY_REPORT: bool = os.getenv("NOTIFY_CHAT_ON_DAILY_REPORT", "true").lower() in ["true", "1", "yes"]
     NOTIFY_CHAT_ON_MONTHLY_REPORT: bool = os.getenv("NOTIFY_CHAT_ON_MONTHLY_REPORT", "true").lower() in ["true", "1", "yes"]
 
+    # Сохранение медиа
+    DOWNLOAD_PHOTOS: bool = os.getenv("DOWNLOAD_PHOTOS", "true").lower() in ["true", "1", "yes"]
+
     # Агрегация и пути
     AUTO_AGGREGATE_DAYS: int = int(os.getenv("AUTO_AGGREGATE_DAYS", "7"))
     
     DATA_DIR: Path = BASE_DIR / os.getenv("DATA_DIR", "data")
     DB_PATH: Path = DATA_DIR / "chat_logger.db"
     AVATARS_DIR: Path = DATA_DIR / "avatars"
+    PHOTOS_DIR: Path = DATA_DIR / "photos"
     REPORTS_DIR: Path = DATA_DIR / "reports"
     
     DAILY_REPORTS_DIR: Path = REPORTS_DIR / "daily"
@@ -49,9 +53,10 @@ class Config:
 
     @classmethod
     def ensure_directories(cls):
-        """Создает необходимые директории для данных, аватарок и отчетов."""
+        """Создает необходимые директории для данных, аватарок, фото и отчетов."""
         cls.DATA_DIR.mkdir(parents=True, exist_ok=True)
         cls.AVATARS_DIR.mkdir(parents=True, exist_ok=True)
+        cls.PHOTOS_DIR.mkdir(parents=True, exist_ok=True)
         cls.DAILY_REPORTS_DIR.mkdir(parents=True, exist_ok=True)
         cls.WEEKLY_REPORTS_DIR.mkdir(parents=True, exist_ok=True)
         cls.MONTHLY_REPORTS_DIR.mkdir(parents=True, exist_ok=True)
