@@ -341,12 +341,19 @@
         }
 
         .attachment-photo {
-            max-width: 280px;
-            max-height: 200px;
+            max-width: 320px;
+            max-height: 260px;
             border-radius: var(--radius-sm);
             border: 1px solid var(--border);
             object-fit: cover;
             display: block;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .attachment-photo:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
         /* Footer */

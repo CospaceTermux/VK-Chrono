@@ -73,8 +73,8 @@
                 <div class="attachments-grid">
                     {% for att in msg.attachments %}
                         {% if att.type == 'photo' %}
-                            <a href="{{ att.url }}" target="_blank" rel="noopener noreferrer">
-                                <img src="{{ att.preview_url or att.url }}" class="attachment-photo" alt="Фотография" loading="lazy">
+                            <a href="{{ att.full_src or att.url }}" target="_blank" rel="noopener noreferrer">
+                                <img src="{{ att.src or att.preview_url or att.url }}" class="attachment-photo" alt="Фотография" loading="lazy">
                             </a>
                         {% elif att.type == 'doc' %}
                             <a href="{{ att.url }}" target="_blank" rel="noopener noreferrer" class="attachment-item">

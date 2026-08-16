@@ -42,6 +42,21 @@ class ReportRenderer:
         
         return avatar_url or None
 
+    def _get_image_base64(self, local_path: Optional[str], fallback_url: Optional[str]) -> Optional[str]:
+        """Возвращает base64 data-uri картинки или fallback URL."""
+        if local_path:
+            p = Path(local_path)
+            if not p.is_absolute():
+                p = config.BASE_DIR / local_path
+            if p.exists() and p.is_file():
+                try:
+                    with open(p, "rb") as f:
+                        data = base64.b64encode(f.read()).decode("utf-8")
+                        return f"data:image/jpeg;base64,{data}"
+                except Exception:
+                    pass
+        return fallback_url or None
+
     def _format_message_text(self, text: str) -> str:
         """Экранирует HTML и делает ссылки кликабельными."""
         if not text:
@@ -68,12 +83,24 @@ class ReportRenderer:
 
         authors = sorted(authors_map.values(), key=lambda x: x["count"], reverse=True)
 
-        # Обрабатываем сообщения для шаблона
+        # Обрабатываем сообщения и вложения для шаблона
         processed_msgs = []
         for m in messages:
             msg_copy = dict(m)
             msg_copy["avatar_src"] = self._get_avatar_base64(m.get("avatar_path"), m.get("avatar_url"))
             msg_copy["text_html"] = self._format_message_text(m.get("text", ""))
+
+            # Обрабатываем вложенные фотографии (встраиваем base64 если есть локальный файл)
+            processed_attachments = []
+            for att in msg_copy.get("attachments", []):
+                att_copy = dict(att)
+                if att_copy.get("type") == "photo":
+                    local_p = att_copy.get("local_path")
+                    att_copy["src"] = self._get_image_base64(local_p, att_copy.get("preview_url") or att_copy.get("url"))
+                    att_copy["full_src"] = self._get_image_base64(local_p, att_copy.get("url"))
+                processed_attachments.append(att_copy)
+            msg_copy["attachments"] = processed_attachments
+
             processed_msgs.append(msg_copy)
 
         # Конвертируем markdown сводки в HTML
