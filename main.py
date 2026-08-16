@@ -257,6 +257,14 @@ def cmd_test_github(args):
     else:
         logger.error("Проверьте GITHUB_TOKEN и GITHUB_REPO в .env")
 
+def cmd_test_gdrive(args):
+    """Проверка подключения к Google Drive."""
+    from gdrive_sync import gdrive_sync
+    if gdrive_sync.test_connection():
+        logger.info("🎉 Подключение к Google Drive работает корректно!")
+    else:
+        logger.error("Проверьте GDRIVE_SERVICE_ACCOUNT_FILE / GDRIVE_FOLDER_ID или GDRIVE_LOCAL_PATH в .env")
+
 def main():
     parser = argparse.ArgumentParser(description="VK Chrono - Бот логирования бесед VK с AI-суммаризацией")
     subparsers = parser.add_subparsers(dest="command", help="Команда для выполнения")
@@ -286,6 +294,9 @@ def main():
     # test-github
     subparsers.add_parser("test-github", help="Проверить подключение и права на запись в GitHub репозиторий")
 
+    # test-gdrive
+    subparsers.add_parser("test-gdrive", help="Проверить подключение к Google Drive")
+
     # simulate
     p_sim = subparsers.add_parser("simulate", help="Запустить симуляцию 7 дней переписки и проверить всю цепочку")
     p_sim.add_argument("--days", type=int, default=7, help="Количество дней симуляции (по умолчанию 7)")
@@ -304,6 +315,8 @@ def main():
         cmd_aggregate_all(args)
     elif args.command == "test-github":
         cmd_test_github(args)
+    elif args.command == "test-gdrive":
+        cmd_test_gdrive(args)
     elif args.command == "simulate":
         cmd_simulate(args)
     else:

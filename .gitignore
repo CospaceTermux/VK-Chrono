@@ -8,6 +8,9 @@ ENV/
 .env.txt
 *.env
 *.env.txt
+service_account.json
+credentials.json
+*service_account*.json
 
 # SQLite Data, Cache & Local Reports
 data/chat_logger.db*
