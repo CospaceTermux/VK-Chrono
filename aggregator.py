@@ -74,9 +74,14 @@ class ReportAggregator:
 
         # Отправка уведомления в беседу
         if config.NOTIFY_CHAT_ON_DAILY_REPORT:
+            try:
+                formatted_date = datetime.strptime(date_str, "%Y-%m-%d").strftime("%d.%m.%Y")
+            except Exception:
+                formatted_date = date_str
+
             vk_client.send_message(
                 peer_id=peer_id,
-                message=f"Бот успешно сохранил сообщения за {date_str}, продолжайте в том же духе!"
+                message=f"Бот успешно сохранил сообщения за {formatted_date}, продолжайте в том же духе!"
             )
 
         logger.info(f"✅ Дневной отчет успешно создан: {html_path}")
