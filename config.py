@@ -12,6 +12,7 @@ VERSION = "1.1.0"
 class Config:
     """Конфигурация проекта VK Chrono"""
     VERSION: str = VERSION
+    BASE_DIR: Path = BASE_DIR
     
     # VK настройки
     VK_TOKEN: str = os.getenv("VK_TOKEN", "")
