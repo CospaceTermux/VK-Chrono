@@ -29,6 +29,10 @@ class Config:
     GITHUB_PATH_PREFIX: str = os.getenv("GITHUB_PATH_PREFIX", "reports")
     GITHUB_REPO_PRIVATE: bool = os.getenv("GITHUB_REPO_PRIVATE", "true").lower() in ["true", "1", "yes"]
 
+    # Уведомления в чат VK
+    NOTIFY_CHAT_ON_DAILY_REPORT: bool = os.getenv("NOTIFY_CHAT_ON_DAILY_REPORT", "true").lower() in ["true", "1", "yes"]
+    NOTIFY_CHAT_ON_MONTHLY_REPORT: bool = os.getenv("NOTIFY_CHAT_ON_MONTHLY_REPORT", "true").lower() in ["true", "1", "yes"]
+
     # Агрегация и пути
     AUTO_AGGREGATE_DAYS: int = int(os.getenv("AUTO_AGGREGATE_DAYS", "7"))
     

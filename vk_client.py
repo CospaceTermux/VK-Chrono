@@ -1,5 +1,6 @@
 import os
 import time
+import random
 import logging
 import requests
 from pathlib import Path
@@ -37,6 +38,24 @@ class VKBotClient:
             return True
         except Exception as e:
             logger.error(f"Ошибка подключения к VK API: {e}")
+            return False
+
+    def send_message(self, peer_id: int, message: str) -> bool:
+        """Отправляет текстовое сообщение в беседу VK."""
+        if not self.vk:
+            if not self.connect():
+                return False
+
+        try:
+            self.vk.messages.send(
+                peer_id=peer_id,
+                message=message,
+                random_id=random.randint(1, 2147483647)
+            )
+            logger.info(f"📤 [VK] Сообщение успешно отправлено в беседу {peer_id}: {message[:60]}...")
+            return True
+        except Exception as e:
+            logger.error(f"❌ Ошибка отправки сообщения в беседу {peer_id}: {e}")
             return False
 
     def ensure_user(self, user_id: int) -> Dict[str, Any]:

@@ -7,6 +7,7 @@ from database import db
 from summarizer import summarizer
 from renderer import renderer
 from github_sync import github_sync
+from vk_client import vk_client
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +22,7 @@ class ReportAggregator:
         3. Рендерит автономный HTML и Markdown
         4. Сохраняет метаданные в SQLite
         5. Автоматически выгружает в GitHub (если включено)
+        6. Отправляет уведомление в беседу VK
         """
         messages = db.get_messages_for_date(peer_id, date_str)
         if not messages:
@@ -69,6 +71,13 @@ class ReportAggregator:
         if github_sync.is_enabled:
             github_sync.upload_file(html_path, f"daily/{html_filename}", f"Add daily HTML report: {date_str}")
             github_sync.upload_file(md_path, f"daily/{md_filename}", f"Add daily MD report: {date_str}")
+
+        # Отправка уведомления в беседу
+        if config.NOTIFY_CHAT_ON_DAILY_REPORT:
+            vk_client.send_message(
+                peer_id=peer_id,
+                message=f"Бот успешно сохранил сообщения за {date_str}, продолжайте в том же духе!"
+            )
 
         logger.info(f"✅ Дневной отчет успешно создан: {html_path}")
         return True
@@ -175,6 +184,14 @@ class ReportAggregator:
         if github_sync.is_enabled:
             github_sync.upload_file(html_path, f"monthly/{html_filename}", f"Add monthly HTML archive: {month_key}")
             github_sync.upload_file(md_path, f"monthly/{md_filename}", f"Add monthly MD archive: {month_key}")
+
+        # Отправка уведомления в беседу
+        if config.NOTIFY_CHAT_ON_MONTHLY_REPORT:
+            repo_link = f"\n🔗 Репозиторий: https://github.com/{config.GITHUB_REPO}" if config.GITHUB_REPO else ""
+            vk_client.send_message(
+                peer_id=peer_id,
+                message=f"Бот Хранитель успешно создал сводку за месяц. Вы можете ознакомиться с ней в репозитории.{repo_link}"
+            )
 
         logger.info(f"✅ Месячный архив успешно создан: {html_path}")
         return True
