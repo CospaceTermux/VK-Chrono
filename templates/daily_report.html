@@ -81,8 +81,22 @@
                                 📄 {{ att.title or 'Документ' }} {% if att.size_str %}({{ att.size_str }}){% endif %}
                             </a>
                         {% elif att.type == 'audio_message' %}
-                            <div class="attachment-item">
-                                🎙️ Голосовое сообщение {% if att.duration %}({{ att.duration }} сек.){% endif %}
+                            <div style="background: var(--msg-bg-other); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 10px 14px; margin-top: 6px; width: 100%; max-width: 420px;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                                    <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">🎙️ Голосовое сообщение</span>
+                                    <span style="font-size: 0.75rem; color: var(--text-muted);">{{ att.duration }} сек.</span>
+                                </div>
+                                {% if att.url %}
+                                <audio controls preload="none" style="width: 100%; height: 32px; margin-bottom: 4px;">
+                                    <source src="{{ att.url }}" type="audio/mpeg">
+                                    Ваш браузер не поддерживает аудио.
+                                </audio>
+                                {% endif %}
+                                {% if att.transcript %}
+                                <div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; border-left: 2px solid var(--accent); padding-left: 8px; margin-top: 6px;">
+                                    «{{ att.transcript }}»
+                                </div>
+                                {% endif %}
                             </div>
                         {% elif att.type == 'sticker' %}
                             <img src="{{ att.url }}" style="max-width: 120px; max-height: 120px;" alt="Стикер">

@@ -13,9 +13,11 @@ ENV/
 data/chat_logger.db*
 data/avatars/*
 data/photos/*
+data/audio/*
 data/reports/*
 !data/avatars/.gitkeep
 !data/photos/.gitkeep
+!data/audio/.gitkeep
 !data/reports/daily/.gitkeep
 !data/reports/weekly/.gitkeep
 !data/reports/monthly/.gitkeep

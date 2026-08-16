@@ -37,6 +37,7 @@ class Config:
 
     # Сохранение медиа
     DOWNLOAD_PHOTOS: bool = os.getenv("DOWNLOAD_PHOTOS", "true").lower() in ["true", "1", "yes"]
+    DOWNLOAD_AUDIO: bool = os.getenv("DOWNLOAD_AUDIO", "true").lower() in ["true", "1", "yes"]
 
     # Агрегация и пути
     AUTO_AGGREGATE_DAYS: int = int(os.getenv("AUTO_AGGREGATE_DAYS", "7"))
@@ -45,6 +46,7 @@ class Config:
     DB_PATH: Path = DATA_DIR / "chat_logger.db"
     AVATARS_DIR: Path = DATA_DIR / "avatars"
     PHOTOS_DIR: Path = DATA_DIR / "photos"
+    AUDIO_DIR: Path = DATA_DIR / "audio"
     REPORTS_DIR: Path = DATA_DIR / "reports"
     
     DAILY_REPORTS_DIR: Path = REPORTS_DIR / "daily"
@@ -55,10 +57,11 @@ class Config:
 
     @classmethod
     def ensure_directories(cls):
-        """Создает необходимые директории для данных, аватарок, фото и отчетов."""
+        """Создает необходимые директории для данных, аватарок, фото, аудио и отчетов."""
         cls.DATA_DIR.mkdir(parents=True, exist_ok=True)
         cls.AVATARS_DIR.mkdir(parents=True, exist_ok=True)
         cls.PHOTOS_DIR.mkdir(parents=True, exist_ok=True)
+        cls.AUDIO_DIR.mkdir(parents=True, exist_ok=True)
         cls.DAILY_REPORTS_DIR.mkdir(parents=True, exist_ok=True)
         cls.WEEKLY_REPORTS_DIR.mkdir(parents=True, exist_ok=True)
         cls.MONTHLY_REPORTS_DIR.mkdir(parents=True, exist_ok=True)

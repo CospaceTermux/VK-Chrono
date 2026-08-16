@@ -193,8 +193,31 @@ class VKBotClient:
             logger.warning(f"Ошибка скачивания фотографии {url}: {e}")
         return ""
 
+    def _download_audio(self, audio_id: int, url: str, date_str: str) -> str:
+        """Скачивает голосовое сообщение в локальную папку data/audio/{date_str}/{audio_id}.mp3."""
+        if not url or not config.DOWNLOAD_AUDIO:
+            return ""
+
+        target_dir = config.AUDIO_DIR / date_str
+        target_dir.mkdir(parents=True, exist_ok=True)
+        dest = target_dir / f"{audio_id}.mp3"
+
+        if dest.exists():
+            return str(dest)
+
+        try:
+            resp = requests.get(url, timeout=15)
+            if resp.status_code == 200:
+                with open(dest, "wb") as f:
+                    f.write(resp.content)
+                logger.info(f"🎙️ [Медиа] Голосовое сообщение сохранено локально: {dest}")
+                return str(dest)
+        except Exception as e:
+            logger.warning(f"Ошибка скачивания аудио {url}: {e}")
+        return ""
+
     def parse_attachments(self, attachments: list, date_str: str = "") -> List[Dict[str, Any]]:
-        """Парсит и скачивает вложения VK сообщения."""
+        """Парсит и скачивает вложения VK сообщения (фото, голосовые, документы)."""
         parsed = []
         for a in (attachments or []):
             att_type = a.get("type")
@@ -205,7 +228,6 @@ class VKBotClient:
                 best_photo = sizes[-1]["url"] if sizes else ""
                 preview = sizes[0]["url"] if sizes else best_photo
                 
-                # Скачиваем фото локально
                 local_photo_path = ""
                 if best_photo and date_str:
                     local_photo_path = self._download_photo(photo_id, best_photo, date_str)
@@ -227,10 +249,22 @@ class VKBotClient:
                 })
             elif att_type == "audio_message":
                 aud_obj = a.get("audio_message", {})
+                audio_id = aud_obj.get("id", int(time.time()))
+                duration = aud_obj.get("duration", 0)
+                audio_url = aud_obj.get("link_mp3") or aud_obj.get("link_ogg", "")
+                transcript = aud_obj.get("transcript", "")  # Авто-расшифровка текста от VK
+                
+                local_audio_path = ""
+                if audio_url and date_str:
+                    local_audio_path = self._download_audio(audio_id, audio_url, date_str)
+
                 parsed.append({
                     "type": "audio_message",
-                    "duration": aud_obj.get("duration", 0),
-                    "url": aud_obj.get("link_ogg") or aud_obj.get("link_mp3", "")
+                    "id": audio_id,
+                    "duration": duration,
+                    "url": audio_url,
+                    "transcript": transcript,
+                    "local_path": local_audio_path
                 })
             elif att_type == "sticker":
                 st_obj = a.get("sticker", {})

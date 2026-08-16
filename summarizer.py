@@ -81,7 +81,12 @@ class GeminiSummarizer:
                 elif t == "doc":
                     att_info.append(f"[Документ: {a.get('title', '')}]")
                 elif t == "audio_message":
-                    att_info.append("[Голосовое сообщение]")
+                    dur = a.get("duration", 0)
+                    trans = a.get("transcript", "").strip()
+                    if trans:
+                        att_info.append(f'[Голосовое сообщение ({dur} сек.): "{trans}"]')
+                    else:
+                        att_info.append(f'[Голосовое сообщение ({dur} сек.)]')
                 elif t == "sticker":
                     att_info.append("[Стикер]")
                 else:
