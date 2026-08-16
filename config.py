@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 
 class Config:
     """Конфигурация проекта VK Chrono"""
