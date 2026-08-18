@@ -9,49 +9,97 @@ from config import config
 
 logger = logging.getLogger(__name__)
 
+SCOPES = [
+    "https://www.googleapis.com/auth/drive.file",
+    "https://www.googleapis.com/auth/drive"
+]
+
 class GoogleDriveSync:
-    """Модуль автоматической загрузки HTML-отчетов в Google Drive."""
+    """Модуль автоматической загрузки HTML-отчетов в Google Drive (OAuth2 / Service Account / Local)."""
 
     def __init__(self):
         self.folder_id = config.GDRIVE_FOLDER_ID
         self.service_account_file = config.GDRIVE_SERVICE_ACCOUNT_FILE
+        self.credentials_file = os.getenv("GDRIVE_OAUTH_CREDENTIALS", "credentials.json")
+        self.token_file = os.getenv("GDRIVE_TOKEN_FILE", "token.json")
         self.local_gdrive_path = config.GDRIVE_LOCAL_PATH
-        self._credentials = None
 
     @property
     def is_enabled(self) -> bool:
         """Проверяет, включена ли интеграция с Google Drive."""
         if not config.GDRIVE_ENABLED:
             return False
-        # Включено либо через локальную папку синхронизации, либо через API
-        return bool(self.local_gdrive_path or (self.service_account_file and self.folder_id))
+        # Включено через локальную папку, OAuth2 или Service Account
+        has_oauth = Path(self.credentials_file).exists() or Path(self.token_file).exists()
+        has_sa = self.service_account_file and Path(self.service_account_file).exists()
+        return bool(self.local_gdrive_path or has_oauth or has_sa)
 
-    def _get_access_token(self) -> Optional[str]:
-        """Получает токен доступа через Google Service Account."""
-        sa_path = Path(self.service_account_file) if self.service_account_file else None
-        if not sa_path:
-            return None
-        
-        if not sa_path.is_absolute():
-            sa_path = config.BASE_DIR / sa_path
+    def _get_oauth_access_token(self, interactive: bool = False) -> Optional[str]:
+        """Получает токен пользователя через OAuth 2.0 (для личных Google аккаунтов)."""
+        token_path = Path(self.token_file)
+        if not token_path.is_absolute():
+            token_path = config.BASE_DIR / token_path
 
-        if not sa_path.exists():
-            logger.error(f"Файл ключа сервисного аккаунта Google не найден: {sa_path}")
-            return None
+        creds_path = Path(self.credentials_file)
+        if not creds_path.is_absolute():
+            creds_path = config.BASE_DIR / creds_path
 
         try:
-            from google.oauth2 import service_account
+            from google.oauth2.credentials import Credentials
+            from google_auth_oauthlib.flow import InstalledAppFlow
             import google.auth.transport.requests
 
-            scopes = ["https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
-            creds = service_account.Credentials.from_service_account_file(str(sa_path), scopes=scopes)
-            
-            auth_req = google.auth.transport.requests.Request()
-            creds.refresh(auth_req)
-            return creds.token
+            creds = None
+            if token_path.exists():
+                creds = Credentials.from_authorized_user_file(str(token_path), SCOPES)
+
+            if not creds or not creds.valid:
+                if creds and creds.expired and creds.refresh_token:
+                    auth_req = google.auth.transport.requests.Request()
+                    creds.refresh(auth_req)
+                    with open(token_path, "w", encoding="utf-8") as token_f:
+                        token_f.write(creds.to_json())
+                elif interactive and creds_path.exists():
+                    logger.info("Открытие браузера для авторизации Google Drive...")
+                    flow = InstalledAppFlow.from_client_secrets_file(str(creds_path), SCOPES)
+                    creds = flow.run_local_server(port=0)
+                    with open(token_path, "w", encoding="utf-8") as token_f:
+                        token_f.write(creds.to_json())
+                    logger.info(f"✅ Авторизация успешна! Токен сохранен в {token_path.name}")
+                elif not creds:
+                    return None
+
+            return creds.token if creds else None
         except Exception as e:
-            logger.error(f"Ошибка аутентификации Google Service Account: {e}")
+            logger.error(f"Ошибка OAuth2 авторизации Google: {e}")
             return None
+
+    def _get_access_token(self, interactive: bool = False) -> Optional[str]:
+        """Получает токен доступа: сначала OAuth 2.0 (личный аккаунт), затем Service Account."""
+        # 1. Проверяем OAuth 2.0 пользователя (рекомендуется для личных Google Drive)
+        oauth_token = self._get_oauth_access_token(interactive=interactive)
+        if oauth_token:
+            return oauth_token
+
+        # 2. Проверяем Service Account (для Workspace / Shared Drives)
+        sa_path = Path(self.service_account_file) if self.service_account_file else None
+        if sa_path:
+            if not sa_path.is_absolute():
+                sa_path = config.BASE_DIR / sa_path
+
+            if sa_path.exists():
+                try:
+                    from google.oauth2 import service_account
+                    import google.auth.transport.requests
+
+                    creds = service_account.Credentials.from_service_account_file(str(sa_path), scopes=SCOPES)
+                    auth_req = google.auth.transport.requests.Request()
+                    creds.refresh(auth_req)
+                    return creds.token
+                except Exception as e:
+                    logger.error(f"Ошибка аутентификации Google Service Account: {e}")
+
+        return None
 
     def _find_existing_file_id(self, token: str, filename: str) -> Optional[str]:
         """Ищет ID существующего файла в целевой папке Google Drive для обновления."""
@@ -73,7 +121,7 @@ class GoogleDriveSync:
         """
         Загружает HTML-отчет в Google Drive:
         1. Если настроен GDRIVE_LOCAL_PATH (приложение Google Диск для ПК) — копирует файл туда.
-        2. Если настроен Service Account API — отправляет файл в папку на Google Drive по API.
+        2. Если настроен OAuth2 или Service Account API — отправляет файл в папку на Google Drive по API.
         """
         if not self.is_enabled:
             return False
@@ -97,9 +145,9 @@ class GoogleDriveSync:
                 except Exception as e:
                     logger.error(f"Ошибка копирования в локальную папку Google Drive: {e}")
 
-        # Вариант 2: Загрузка через Google Drive REST API
-        if self.service_account_file and self.folder_id:
-            token = self._get_access_token()
+        # Вариант 2: Загрузка через Google Drive API (OAuth 2.0 / Service Account)
+        if self.folder_id:
+            token = self._get_access_token(interactive=False)
             if token:
                 try:
                     with open(local_path, "rb") as f:
@@ -110,7 +158,7 @@ class GoogleDriveSync:
 
                     if existing_file_id:
                         # Обновляем существующий файл (PATCH)
-                        upload_url = f"https://www.googleapis.com/upload/drive/v3/files/{existing_file_id}?uploadType=media"
+                        upload_url = f"https://www.googleapis.com/upload/drive/v3/files/{existing_file_id}?uploadType=media&supportsAllDrives=true"
                         resp = requests.patch(upload_url, headers=headers, data=file_content, timeout=30)
                         if resp.status_code == 200:
                             logger.info(f"☁️ [Google Drive] HTML-отчет успешно обновлен в папке: {filename}")
@@ -128,13 +176,15 @@ class GoogleDriveSync:
                             "data": ("metadata", json.dumps(metadata), "application/json; charset=UTF-8"),
                             "file": (filename, file_content, "text/html")
                         }
-                        upload_url = "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart"
+                        upload_url = "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true"
                         resp = requests.post(upload_url, headers=headers, files=files, timeout=30)
                         if resp.status_code in [200, 201]:
                             logger.info(f"☁️ [Google Drive] HTML-отчет успешно загружен в папку: {filename}")
                             success = True
                         else:
                             logger.error(f"Ошибка загрузки на Google Drive ({resp.status_code}): {resp.text}")
+                            if "storage quota" in resp.text.lower():
+                                logger.warning("💡 Сервисные аккаунты Google не имеют квоты на личных дисках. Используйте OAuth2 (credentials.json) или Google Диск для ПК.")
 
                 except Exception as e:
                     logger.error(f"Исключение при выгрузке HTML на Google Drive: {e}")
@@ -155,13 +205,14 @@ class GoogleDriveSync:
             else:
                 logger.error(f"❌ Локальная папка Google Drive не найдена: {self.local_gdrive_path}")
 
-        if self.service_account_file and self.folder_id:
-            token = self._get_access_token()
+        if self.folder_id:
+            token = self._get_access_token(interactive=True)
             if not token:
+                logger.error("Не удалось получить токен доступа Google Drive.")
                 return False
 
             headers = {"Authorization": f"Bearer {token}"}
-            url = f"https://www.googleapis.com/drive/v3/files/{self.folder_id}?fields=id,name,capabilities"
+            url = f"https://www.googleapis.com/drive/v3/files/{self.folder_id}?fields=id,name,capabilities&supportsAllDrives=true"
             try:
                 resp = requests.get(url, headers=headers, timeout=10)
                 if resp.status_code == 200:
@@ -170,7 +221,6 @@ class GoogleDriveSync:
                     return True
                 else:
                     logger.error(f"❌ Ошибка доступа к папке Google Drive ({resp.status_code}): {resp.text}")
-                    logger.info("Убедитесь, что вы предоставили доступ (Редактор) сервисному аккаунту к этой папке на Google Диске!")
                     return False
             except Exception as e:
                 logger.error(f"❌ Ошибка сети при проверке Google Drive: {e}")
