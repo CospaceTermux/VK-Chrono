@@ -38,9 +38,9 @@ class Config:
     GDRIVE_FOLDER_ID: Optional[str] = os.getenv("GDRIVE_FOLDER_ID") or None
     GDRIVE_LOCAL_PATH: Optional[str] = os.getenv("GDRIVE_LOCAL_PATH") or None
 
-    # Уведомления в чат VK
-    NOTIFY_CHAT_ON_DAILY_REPORT: bool = os.getenv("NOTIFY_CHAT_ON_DAILY_REPORT", "true").lower() in ["true", "1", "yes"]
-    NOTIFY_CHAT_ON_MONTHLY_REPORT: bool = os.getenv("NOTIFY_CHAT_ON_MONTHLY_REPORT", "true").lower() in ["true", "1", "yes"]
+    # Уведомления в чат VK (по умолчанию False - тихий режим логирования)
+    NOTIFY_CHAT_ON_DAILY_REPORT: bool = os.getenv("NOTIFY_CHAT_ON_DAILY_REPORT", "false").lower() in ["true", "1", "yes"]
+    NOTIFY_CHAT_ON_MONTHLY_REPORT: bool = os.getenv("NOTIFY_CHAT_ON_MONTHLY_REPORT", "false").lower() in ["true", "1", "yes"]
 
     # Сохранение медиа
     DOWNLOAD_PHOTOS: bool = os.getenv("DOWNLOAD_PHOTOS", "true").lower() in ["true", "1", "yes"]
